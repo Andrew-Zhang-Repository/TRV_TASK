@@ -1,2 +1,9 @@
 Commit 1:
 - Asked Claude Opus 4.6 to do a quick scan of the repository and explain tasks in laymans in an md file
+
+Commit 2:
+- Asked Gemini 3.1 pro to read the scaffolded guide and pipeline created by Claude before hand to gain context
+- From above create boilerplate code and dockerfile for the quoter
+- Issues with dockerfile generated trying to curl the nat.c github -> I resort to downloading it locally and adding into docker image
+- Some boilerplate code and psuedo completed code did not have certain features like chron based rate limiting -> Manual add
+- May need to consider finding a way to fetch and getting nat.c in docker instead of having locally for testers or add some kind of install script in readme for submission

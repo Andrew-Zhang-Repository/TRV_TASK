@@ -1,33 +1,30 @@
-# Your strategy goes here. Replace this file (and add your source) so that the
-# container builds and runs your market maker.
-#
-# Requirements:
-#   - The container must connect to the exchange's NATS at $NATS_URL
-#     (inside the compose network that is nats://nats:4222).
-#   - It must run your strategy as its CMD/ENTRYPOINT (no host dependencies).
-#
-# Example skeletons (delete what you don't use):
-#
-#   # Rust
-#   FROM rust:1 AS build
-#   WORKDIR /app
-#   COPY . .
-#   RUN cargo build --release
-#   FROM debian:stable-slim
-#   COPY --from=build /app/target/release/<your-bin> /usr/local/bin/strategy
-#   ENV NATS_URL=nats://nats:4222
-#   CMD ["strategy"]
-#
-#   # Go
-#   FROM golang:1 AS build
-#   WORKDIR /app
-#   COPY . .
-#   RUN go build -o /strategy .
-#   FROM gcr.io/distroless/base-debian12
-#   COPY --from=build /strategy /strategy
-#   ENV NATS_URL=nats://nats:4222
-#   CMD ["/strategy"]
-#
-# Placeholder so `docker compose --profile strategy up` works before you start:
-FROM alpine
-CMD ["sh", "-c", "echo 'Put your strategy in ./strategy/ and replace this Dockerfile.'; sleep infinity"]
+
+FROM debian:bookworm-slim AS build
+RUN apt-get update && apt-get install -y libssl3 && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y \
+    cmake gcc g++ git make libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+
+COPY nats.c /nats.c
+RUN cd /nats.c && \
+    mkdir build && cd build && \
+    cmake .. -DNATS_BUILD_STREAMING=OFF -DNATS_BUILD_TLS_USE_OPENSSL=OFF -DNATS_BUILD_TESTS=OFF -DNATS_BUILD_EXAMPLES=OFF && \
+    make -j$(nproc) install
+
+WORKDIR /app
+COPY CMakeLists.txt main.cpp ./
+RUN mkdir build && cd build && \
+    cmake .. && \
+    make -j$(nproc)
+
+
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y libssl3 && rm -rf /var/lib/apt/lists/*
+COPY --from=build /usr/local/lib/libnats.so* /usr/local/lib/
+COPY --from=build /app/build/strategy /usr/local/bin/strategy
+
+ENV LD_LIBRARY_PATH=/usr/local/lib
+
+# Run the strategy (no host dependencies)
+CMD ["strategy"]
