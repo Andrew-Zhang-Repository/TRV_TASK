@@ -1,10 +1,12 @@
-Commit 1:
-- Changed some bugs in taker.py : line 101 conditional branch is identical, second condition should subtract
-- Line 85 request sent without sender code from env
-- Remove hardcoded fill on line 96
+Commit 1 Reflection:
+Had to understand NATS protocol is just like a form of TCP, UDP, and Bitorrent where there are certain ids and payloads. Before I understood that I had to download the CLI, but that would only run if the server is open. And since I run WSL and docker is on Windows desktop running the script but not having docker was a problem. Had to link
+those two so the server would run and I could actually get the simulation running and have a play around with the CLI. I chose C++ for the quoter based of familiarity with it and since im not allowed to use python, prefered to stick with the lower level langauge, and opposite for hedge since python is allowed for that. 
 
 
-Commit 2:
-- Added all quoter logic for all three instruments
-- Added appropriate libraries compilers for C and CPP in docker
-- Working dockerfile for quoter that takes in the --strategy tag
+Commit 2 Reflection:
+Trouble of understanding the quoters role as a mediator to buy a bid and essentially sell at ask from the NAT message. And getting the agent to cooperate i.e when its shorted it needs to buy more, and if it has to much it needs sell more to sought of control the market. Other than that a lot of the logic and code was already implemented by the agent. Just adjusted some constants like spread ticks to 3 since the net spread is 6 so on each side it only makes since to be 3. Skew factor is at 0.1 to slow down aggressive and momentous trends in the sim. Chose 5 contracts per quote because its large enough to be worth the spread. Matches sim's background quoters (2–6). Rate limit was set to 100ms because after running a few tests in the sim this felt smoother than other minimum and maximums ive tried through various testing. Also issues with getting GIT clone to work for nats.c so up until the final commit I cloned it manually until i realised i needed to include Add -DNATS_BUILD_WITH_TLS=OFF for it to clone itself and be usable within the docker container. 
+
+Commit 3 Reflection:
+Hedger made more sense to me to held on (pos) sell as much as it can to get back to 0, too little buy more to get back to the sweet middle ground. A lot of it was already implemented all that was left was refactoring code from both quoter and hedger to apply the tests ive made and adhede to solid principles. Thresholds of max hedge clip at 10 so on fill it doesnt overbuy/sell contracts. Hedge target at 5, it leaves a small residual acceptable per "small positions are okay." Creates a dead band [−5, +5] where no hedging occurs, preventing thrashing. Hedge cooldown at 200ms to give time to process fills and update best bid orders. And hedge_feed at AAH6 because front months take priority to sell quick.
+
+After test creating, manual code refactors to apply solid principles and overall readability whilst retaining behaviour.

@@ -1,19 +1,24 @@
-
 FROM debian:bookworm-slim AS build
-RUN apt-get update && apt-get install -y libssl3 && rm -rf /var/lib/apt/lists/*
+# Install build tools AND ca-certificates (required for git to talk to GitHub)
 RUN apt-get update && apt-get install -y \
-    cmake gcc g++ git make libssl-dev \
+    cmake \
+    gcc \
+    g++ \
+    make \
+    git \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-
-COPY nats.c /nats.c
-RUN cd /nats.c && \
+# Clone nats.c inside the container (keeps your submission zip tiny!)
+# We use --depth 1 to only download the latest commit, making it super fast.
+RUN git clone --branch v3.8.0 --depth 1 https://github.com/nats-io/nats.c.git /nats.c && \
+    cd /nats.c && \
     mkdir build && cd build && \
-    cmake .. -DNATS_BUILD_STREAMING=OFF -DNATS_BUILD_TLS_USE_OPENSSL=OFF -DNATS_BUILD_TESTS=OFF -DNATS_BUILD_EXAMPLES=OFF && \
+    cmake .. -DNATS_BUILD_STREAMING=OFF -DNATS_BUILD_TLS_USE_OPENSSL=OFF -DNATS_BUILD_TESTS=OFF -DNATS_BUILD_EXAMPLES=OFF -DNATS_BUILD_WITH_TLS=OFF && \
     make -j$(nproc) install
 
 WORKDIR /app
-COPY CMakeLists.txt main.cpp ./
+COPY CMakeLists.txt main.cpp quote_logic.h ./
 RUN mkdir build && cd build && \
     cmake .. && \
     make -j$(nproc)

@@ -82,6 +82,7 @@ class Taker:
             oid = self.next_oid()
             order = f"{SENDER} A {FEED} {oid} {side} {CLIP} {px} F"
             try:
+                # Need to follow "ex.req.{SENDER}" format from protocol markdown
                 reply = await self.nc.request(f"ex.req.{SENDER}", order.encode(), timeout=1.0)
             except Exception:
                 return  # timed out; treat as no fill
