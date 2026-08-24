@@ -1,0 +1,2 @@
+Commit 1:
+- Asked Claude Opus 4.6 to do a quick scan of the repository and explain tasks in laymans in an md file
